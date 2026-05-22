@@ -1,0 +1,350 @@
+.page {
+  display: grid;
+  gap: 18px;
+}
+
+.hero {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(251, 113, 133, 0.14), transparent 30%),
+    linear-gradient(145deg, var(--panel), var(--bg));
+}
+
+.kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  max-width: 62ch;
+  line-height: 1.5;
+}
+
+.toolLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.toolLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.toolLink:hover {
+  border-color: var(--highlight-text);
+  color: var(--highlight-text);
+}
+
+.workspace {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--panel), color-mix(in srgb, var(--panel) 82%, var(--bg)));
+}
+
+.tabBar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tabButton {
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  padding: 0 18px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tabButtonActive {
+  border-color: var(--highlight-text);
+  background: var(--highlight-text);
+  color: var(--bg);
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.matrixSetupGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.scoutingSetupGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.toolColumn {
+  display: grid;
+  gap: 16px;
+}
+
+.playerFields {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.leagueField {
+  max-width: 220px;
+}
+
+.fieldLabel {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.select {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 0 14px;
+  font-size: 1rem;
+}
+
+.statusError {
+  font-size: 0.92rem;
+  color: #ef4444;
+}
+
+.scoutingResult {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 90%, var(--bg)), var(--panel));
+}
+
+.scoutingResultHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.scoutingEyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.scoutingHeadline {
+  margin: 6px 0 0;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+}
+
+.scoutingMeta {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.scoutingSummary {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.scoutingSections {
+  display: grid;
+  gap: 14px;
+}
+
+.scoutingSection {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+}
+
+.scoutingSectionTitle,
+.scoutingDetailTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.scoutingList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.scoutingDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.scoutingDetailCard {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+}
+
+.footerRow {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) auto 1fr;
+  gap: 14px;
+  align-items: end;
+}
+
+.logoField {
+  max-width: 240px;
+}
+
+.logoPreview {
+  width: 68px;
+  height: 68px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoPreview img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.actionCluster {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-width: 108px;
+  min-height: 46px;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryButton {
+  border: 1px solid var(--highlight-text);
+  background: var(--highlight-text);
+  color: var(--bg);
+}
+
+.secondaryButton {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.statusNote {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .toolGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .matrixSetupGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .scoutingSetupGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .scoutingDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .footerRow {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .logoField {
+    max-width: none;
+  }
+
+  .actionCluster {
+    justify-content: stretch;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    flex: 1 1 0;
+  }
+}
