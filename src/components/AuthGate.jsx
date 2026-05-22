@@ -29,7 +29,7 @@ export default function AuthGate() {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.kicker}>NBA Dashboard</div>
+        <div className={styles.kicker}>FIBA Dashboard</div>
         <h1 className={styles.title}>Sign in to your account</h1>
 
         <form className={styles.form} onSubmit={handleSubmit}>
