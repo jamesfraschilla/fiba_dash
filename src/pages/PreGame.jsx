@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { fetchGame } from "../api.js";
+import { fetchGame, teamLogoUrl } from "../api.js";
 import {
   fetchRemotePregamePlayers,
   getTeamBoxScorePlayers,
@@ -62,7 +62,7 @@ const TEAM_TIME_ZONES = {
 const EXPORT_SPECS = {
   portrait: { logicalWidth: 384, logicalHeight: 648, outputWidth: 1536, outputHeight: 2592 },
   landscape: { logicalWidth: 660, logicalHeight: 510, outputWidth: 3300, outputHeight: 2550 },
-  was: { outputWidth: 3840, outputHeight: 2160, boxX: 0, boxY: 0, boxWidth: 802, boxHeight: 1300 },
+  screen: { outputWidth: 3840, outputHeight: 2160, boxX: 0, boxY: 0, boxWidth: 802, boxHeight: 1300 },
 };
 
 let exportFontsPromise = null;
@@ -581,10 +581,31 @@ function downloadCanvas(canvas, filename) {
   link.click();
 }
 
-function buildHeaderLine(game) {
+function getTrackedTeamForPregame(game, trackedTeamScope) {
+  if (!game || !trackedTeamScope) return null;
+  if (trackedTeamScope.startsWith("team:")) {
+    const scopeTeamId = trackedTeamScope.slice(5);
+    if (String(game?.homeTeam?.teamId || "") === scopeTeamId) return game.homeTeam;
+    if (String(game?.awayTeam?.teamId || "") === scopeTeamId) return game.awayTeam;
+    return null;
+  }
+  if (trackedTeamScope === "washington" || trackedTeamScope === "washington_summer") {
+    if (isWashingtonTeam(game?.homeTeam)) return game.homeTeam;
+    if (isWashingtonTeam(game?.awayTeam)) return game.awayTeam;
+    return null;
+  }
+  if (trackedTeamScope === "capital_city") {
+    if (isCapitalCityTeam(game?.homeTeam)) return game.homeTeam;
+    if (isCapitalCityTeam(game?.awayTeam)) return game.awayTeam;
+  }
+  return null;
+}
+
+function buildHeaderLine(game, trackedTeam) {
   const home = game?.homeTeam;
   const away = game?.awayTeam;
-  const trackedIsAway = isWashingtonTeam(away) || isCapitalCityTeam(away);
+  const trackedTeamId = String(trackedTeam?.teamId || "");
+  const trackedIsAway = trackedTeamId && trackedTeamId === String(away?.teamId || "");
   const opponent = trackedIsAway ? home : away;
   const rawCity = String(opponent?.teamCity || "").trim();
   const rawName = String(opponent?.teamName || "").trim();
@@ -628,6 +649,7 @@ export default function PreGame() {
   const templateUpdatedAtRef = useRef(0);
 
   const trackedTeamScope = useMemo(() => getPregameTeamScope(game), [game]);
+  const trackedTeam = useMemo(() => getTrackedTeamForPregame(game, trackedTeamScope), [game, trackedTeamScope]);
 
   const { data: remotePlayers, isFetched: remotePlayersFetched } = useQuery({
     queryKey: ["pregame-players-remote", trackedTeamScope],
@@ -653,9 +675,6 @@ export default function PreGame() {
     refetchInterval: 10_000,
   });
 
-  const washingtonGame = useMemo(() => (
-    isWashingtonTeam(game?.homeTeam) || isWashingtonTeam(game?.awayTeam)
-  ), [game]);
   const supportedTeamGame = Boolean(trackedTeamScope);
   const trackedApiPlayers = useMemo(
     () => getTeamBoxScorePlayers(game, trackedTeamScope),
@@ -814,7 +833,7 @@ export default function PreGame() {
 
   const sortedPlayers = useMemo(() => sortPlayersByLastName(players), [players]);
   const playerById = useMemo(() => new Map(sortedPlayers.map((player) => [player.id, player])), [sortedPlayers]);
-  const headerLineTwo = useMemo(() => buildHeaderLine(game), [game]);
+  const headerLineTwo = useMemo(() => buildHeaderLine(game, trackedTeam), [game, trackedTeam]);
   const tableTypeScale = useMemo(() => {
     const slotCount = Math.max(1, slots.length || 1);
     if (slotCount >= 12) return { time: "26px", player: "21px", lineGap: "3px" };
@@ -891,7 +910,12 @@ export default function PreGame() {
   const handleExport = async (formatKey) => {
     await ensureExportFonts();
     const themeMode = readThemeMode();
-    const logoImage = await loadImage(wizardsLogoUrl);
+    const fallbackLogoUrl = wizardsLogoUrl;
+    const trackedLogoUrl = trackedTeam?.teamId ? teamLogoUrl(trackedTeam.teamId) : "";
+    let logoImage = trackedLogoUrl ? await loadImage(trackedLogoUrl) : null;
+    if (!logoImage) {
+      logoImage = await loadImage(fallbackLogoUrl);
+    }
 
     const portraitScale = EXPORT_SPECS.portrait.outputWidth / EXPORT_SPECS.portrait.logicalWidth;
     const landscapeScale = EXPORT_SPECS.landscape.outputWidth / EXPORT_SPECS.landscape.logicalWidth;
@@ -918,16 +942,16 @@ export default function PreGame() {
       return;
     }
 
-    const wasSpec = EXPORT_SPECS.was;
+    const screenSpec = EXPORT_SPECS.screen;
     const colors = getExportColors(themeMode);
-    const { canvas, context } = makeCanvas(wasSpec.outputWidth, wasSpec.outputHeight, "#ffffff");
+    const { canvas, context } = makeCanvas(screenSpec.outputWidth, screenSpec.outputHeight, "#ffffff");
     context.fillStyle = colors.background;
-    context.fillRect(wasSpec.boxX, wasSpec.boxY, wasSpec.boxWidth, wasSpec.boxHeight);
-    const fitted = fitInside(portraitCanvas, wasSpec.boxWidth, wasSpec.boxHeight);
-    const drawX = wasSpec.boxX + ((wasSpec.boxWidth - fitted.width) / 2);
-    const drawY = wasSpec.boxY + ((wasSpec.boxHeight - fitted.height) / 2);
+    context.fillRect(screenSpec.boxX, screenSpec.boxY, screenSpec.boxWidth, screenSpec.boxHeight);
+    const fitted = fitInside(portraitCanvas, screenSpec.boxWidth, screenSpec.boxHeight);
+    const drawX = screenSpec.boxX + ((screenSpec.boxWidth - fitted.width) / 2);
+    const drawY = screenSpec.boxY + ((screenSpec.boxHeight - fitted.height) / 2);
     context.drawImage(portraitCanvas, drawX, drawY, fitted.width, fitted.height);
-    downloadCanvas(canvas, `pregame-${gameId}-was.png`);
+    downloadCanvas(canvas, `pregame-${gameId}-screen.png`);
     setExportOpen(false);
   };
 
@@ -945,7 +969,7 @@ export default function PreGame() {
         <div className={styles.topRow}>
           <Link className={styles.backButton} to={backUrl}>Back</Link>
         </div>
-        <div className={styles.stateMessage}>Pre-Game is available only for Washington and Capital City games.</div>
+        <div className={styles.stateMessage}>Pre-Game is not available for this game.</div>
       </div>
     );
   }
@@ -1388,7 +1412,7 @@ export default function PreGame() {
             <h2 className={styles.modalTitle}>Export</h2>
             <button type="button" className={styles.doneButton} onClick={() => handleExport("portrait")}>Portrait</button>
             <button type="button" className={styles.doneButton} onClick={() => handleExport("landscape")}>Landscape</button>
-            <button type="button" className={styles.doneButton} onClick={() => handleExport("was")}>WAS</button>
+            <button type="button" className={styles.doneButton} onClick={() => handleExport("screen")}>Screen</button>
             <button type="button" className={styles.modalCancel} onClick={() => setExportOpen(false)}>Cancel</button>
           </div>
         </div>
