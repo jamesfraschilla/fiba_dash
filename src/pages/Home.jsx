@@ -32,20 +32,20 @@ export default function Home() {
   const dateInput = formatDateInput(date);
   const dateLabel = formatDateLabel(date);
 
-  const { data: competitions = [] } = useQuery({
+  const { data: competitions = [], error: competitionsError } = useQuery({
     queryKey: ["fiba-competitions"],
     queryFn: fetchCompetitionOptions,
     staleTime: 5 * 60_000,
   });
 
-  const { data: seasons = [] } = useQuery({
+  const { data: seasons = [], error: seasonsError } = useQuery({
     queryKey: ["fiba-seasons", competitionId],
     queryFn: () => fetchSeasonOptions(competitionId),
     enabled: Boolean(competitionId),
     staleTime: 5 * 60_000,
   });
 
-  const { data: resolvedSeasonId = "" } = useQuery({
+  const { data: resolvedSeasonId = "", error: resolvedSeasonError } = useQuery({
     queryKey: ["fiba-default-season", competitionId],
     queryFn: () => resolveDefaultSeasonId(competitionId),
     enabled: Boolean(competitionId && !seasonParam),
@@ -54,7 +54,7 @@ export default function Home() {
 
   const selectedSeasonId = seasonParam || resolvedSeasonId;
 
-  const { data: teams = [] } = useQuery({
+  const { data: teams = [], error: teamsError } = useQuery({
     queryKey: ["fiba-season-teams", selectedSeasonId],
     queryFn: () => fetchSeasonCompetitors(selectedSeasonId),
     enabled: Boolean(selectedSeasonId),
@@ -149,6 +149,10 @@ export default function Home() {
       : fetchGamesByDate(dateInput, { seasonId: selectedSeasonId, competitionId })),
     enabled: Boolean(selectedSeasonId),
   });
+
+  const activeError = competitionsError || seasonsError || resolvedSeasonError || teamsError || error || null;
+  const activeErrorMessage = String(activeError?.message || "").trim();
+  const isMissingApiKey = activeErrorMessage.includes("VITE_SPORTRADAR_API_KEY");
 
   const competitionLabel = competitions.find((competition) => competition.id === competitionId)?.name || "Competition";
   const seasonLabel = seasons.find((season) => season.id === selectedSeasonId)?.name || "Season";
@@ -263,7 +267,7 @@ export default function Home() {
     );
   }
 
-  if (error) {
+  if (activeError) {
     return (
       <div className={styles.container}>
         <div className={styles.dateNav}>
@@ -277,7 +281,9 @@ export default function Home() {
           {renderFilters()}
         </div>
         <div className={styles.stateMessage}>
-          Failed to load {selectedTeamId ? "team games" : "games"}.
+          {isMissingApiKey
+            ? "Sportradar API key is not configured. Add VITE_SPORTRADAR_API_KEY to your local env file and restart the app."
+            : `Failed to load ${selectedTeamId ? "team games" : "games"}.`}
         </div>
       </div>
     );
