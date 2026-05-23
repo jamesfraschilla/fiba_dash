@@ -1,4 +1,4 @@
-export const ACCOUNTS_ENABLED = import.meta.env.VITE_ENABLE_ACCOUNTS !== "false";
+export const ACCOUNTS_ENABLED = import.meta.env.VITE_ENABLE_ACCOUNTS === "true";
 export const ALLOWED_EMAIL_DOMAIN = (import.meta.env.VITE_ALLOWED_EMAIL_DOMAIN || "monumentalsports.com")
   .replace(/^@/, "")
   .toLowerCase();
