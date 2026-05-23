@@ -7,6 +7,7 @@ const API_BASE = `https://api.sportradar.com/basketball/${SPORTRADAR_ACCESS_LEVE
 const COMPETITIONS_URL = `${API_BASE}/competitions.json`;
 const REGULATION_PERIOD_SECONDS = 10 * 60;
 const OVERTIME_PERIOD_SECONDS = 5 * 60;
+const RUNTIME_API_KEY_STORAGE_KEY = "fiba.sportradarApiKey";
 const FLAG_CODE_BY_ABBREVIATION = {
   ANG: "ao",
   ARG: "ar",
@@ -97,18 +98,34 @@ const MENS_WORLD_CUP_2027_COMPETITION_PRIORITY = [
 ];
 const MENS_WORLD_CUP_2027_COMPETITION_IDS = new Set(MENS_WORLD_CUP_2027_COMPETITION_PRIORITY);
 
+function getRuntimeStorage() {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  return window.localStorage;
+}
+
+function getRuntimeApiKey() {
+  const storage = getRuntimeStorage();
+  if (!storage) return "";
+  return String(storage.getItem(RUNTIME_API_KEY_STORAGE_KEY) || "").trim();
+}
+
+function getConfiguredApiKey() {
+  return SPORTRADAR_API_KEY || getRuntimeApiKey();
+}
+
 function requireApiKey() {
-  if (!SPORTRADAR_API_KEY) {
+  if (!getConfiguredApiKey()) {
     throw new Error("Sportradar API key is not configured. Set VITE_SPORTRADAR_API_KEY.");
   }
 }
 
 async function requestJson(url) {
   requireApiKey();
+  const apiKey = getConfiguredApiKey();
   const response = await fetch(url, {
     headers: {
       accept: "application/json",
-      "x-api-key": SPORTRADAR_API_KEY,
+      "x-api-key": apiKey,
     },
   });
   if (!response.ok) {
@@ -870,6 +887,22 @@ export async function fetchCurrentGLeagueRosters() {
 
 export function nbaEventVideoUrl() {
   return null;
+}
+
+export function hasConfiguredApiKey() {
+  return Boolean(getConfiguredApiKey());
+}
+
+export function saveRuntimeApiKey(value) {
+  const apiKey = String(value || "").trim();
+  const storage = getRuntimeStorage();
+  if (!storage) return false;
+  if (!apiKey) {
+    storage.removeItem(RUNTIME_API_KEY_STORAGE_KEY);
+    return true;
+  }
+  storage.setItem(RUNTIME_API_KEY_STORAGE_KEY, apiKey);
+  return true;
 }
 
 export const FIBA_DEFAULT_COMPETITION_ID = DEFAULT_COMPETITION_ID;

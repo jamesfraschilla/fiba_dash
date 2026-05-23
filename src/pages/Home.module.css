@@ -214,6 +214,56 @@
   color: var(--muted);
 }
 
+.missingKeyPanel {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.missingKeyHint {
+  max-width: 640px;
+  font-size: 13px;
+}
+
+.runtimeKeyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 560px);
+}
+
+.runtimeKeyInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.runtimeKeyInput:focus {
+  border-color: var(--muted);
+  outline: none;
+}
+
+.runtimeKeyButton {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.runtimeKeyButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 @media (max-width: 768px) {
   .dateNav {
     align-items: stretch;
@@ -228,6 +278,15 @@
   }
 
   .teamSelect {
+    width: 100%;
+  }
+
+  .runtimeKeyRow {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .runtimeKeyButton {
     width: 100%;
   }
 

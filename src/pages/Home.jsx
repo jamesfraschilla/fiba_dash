@@ -1,10 +1,12 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   FIBA_DEFAULT_COMPETITION_ID,
   fetchCompetitionOptions,
   fetchGamesByDate,
+  hasConfiguredApiKey,
+  saveRuntimeApiKey,
   fetchSeasonGameDates,
   fetchSeasonCompetitors,
   fetchSeasonOptions,
@@ -24,6 +26,7 @@ import styles from "./Home.module.css";
 
 export default function Home() {
   const [params, setParams] = useSearchParams();
+  const [runtimeApiKey, setRuntimeApiKey] = useState("");
   const dateParam = params.get("d");
   const competitionId = params.get("competition") || FIBA_DEFAULT_COMPETITION_ID;
   const seasonParam = params.get("season") || "";
@@ -180,6 +183,12 @@ export default function Home() {
     setParams(nextParams, { replace: true });
   }, [availableGameDates, dateParam, params, selectedSeasonId, selectedTeamId, setParams]);
 
+  function handleRuntimeApiKeySave() {
+    const didSave = saveRuntimeApiKey(runtimeApiKey);
+    if (!didSave) return;
+    window.location.reload();
+  }
+
   const renderFilters = () => (
     <>
       <div className={styles.filterControl}>
@@ -300,7 +309,33 @@ export default function Home() {
         </div>
         <div className={styles.stateMessage}>
           {isMissingApiKey
-            ? "Sportradar API key is not configured. Add VITE_SPORTRADAR_API_KEY to your local env file and restart the app."
+            ? (
+              <div className={styles.missingKeyPanel}>
+                <div>Sportradar API key is not configured.</div>
+                <div className={styles.missingKeyHint}>
+                  On GitHub Pages, paste a key below to save it in this browser. On local dev, use `.env.local`.
+                </div>
+                <div className={styles.runtimeKeyRow}>
+                  <input
+                    type="password"
+                    className={styles.runtimeKeyInput}
+                    value={runtimeApiKey}
+                    onChange={(event) => setRuntimeApiKey(event.target.value)}
+                    placeholder={hasConfiguredApiKey() ? "API key saved" : "Enter Sportradar API key"}
+                    autoComplete="off"
+                    spellCheck="false"
+                  />
+                  <button
+                    type="button"
+                    className={styles.runtimeKeyButton}
+                    onClick={handleRuntimeApiKeySave}
+                    disabled={!runtimeApiKey.trim()}
+                  >
+                    Save Key
+                  </button>
+                </div>
+              </div>
+            )
             : `Failed to load ${selectedTeamId ? "team games" : "games"}.`}
         </div>
       </div>
