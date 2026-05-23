@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   FIBA_DEFAULT_COMPETITION_ID,
   fetchCompetitionOptions,
   fetchGamesByDate,
+  fetchSeasonGameDates,
   fetchSeasonCompetitors,
   fetchSeasonOptions,
   fetchTeamSeasonGames,
@@ -58,6 +59,13 @@ export default function Home() {
     queryKey: ["fiba-season-teams", selectedSeasonId],
     queryFn: () => fetchSeasonCompetitors(selectedSeasonId),
     enabled: Boolean(selectedSeasonId),
+    staleTime: 5 * 60_000,
+  });
+
+  const { data: availableGameDates = [] } = useQuery({
+    queryKey: ["fiba-season-game-dates", selectedSeasonId],
+    queryFn: () => fetchSeasonGameDates(selectedSeasonId),
+    enabled: Boolean(selectedSeasonId && !selectedTeamId),
     staleTime: 5 * 60_000,
   });
 
@@ -161,6 +169,16 @@ export default function Home() {
     if (!selectedTeamId) return games;
     return games;
   }, [games, selectedTeamId]);
+
+  useEffect(() => {
+    if (dateParam || selectedTeamId || !selectedSeasonId || !availableGameDates.length) return;
+    const today = formatDateInput(new Date());
+    const nextAvailableDate = availableGameDates.find((value) => value >= today) || availableGameDates[availableGameDates.length - 1];
+    if (!nextAvailableDate || nextAvailableDate === today) return;
+    const nextParams = new URLSearchParams(params);
+    nextParams.set("d", nextAvailableDate);
+    setParams(nextParams, { replace: true });
+  }, [availableGameDates, dateParam, params, selectedSeasonId, selectedTeamId, setParams]);
 
   const renderFilters = () => (
     <>

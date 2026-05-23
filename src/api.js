@@ -728,6 +728,17 @@ export async function fetchGamesByDate(dateStr, options = {}) {
     .sort((left, right) => String(left.gameTimeUTC).localeCompare(String(right.gameTimeUTC)));
 }
 
+export async function fetchSeasonGameDates(seasonId) {
+  const key = normalizeText(seasonId);
+  if (!key) return [];
+  const games = await fetchSeasonSummaries(key);
+  return [...new Set(
+    games
+      .map((game) => parseDatePart(game?.sport_event?.start_time))
+      .filter(Boolean)
+  )].sort();
+}
+
 export async function fetchTeamSeasonGames(teamId, opponentTeamId = "", seasonId = "") {
   const resolvedSeasonId = seasonId || await resolveDefaultSeasonId(DEFAULT_COMPETITION_ID);
   const games = await fetchSeasonSummaries(resolvedSeasonId);
