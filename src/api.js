@@ -1,13 +1,15 @@
+import { supabase } from "./supabaseClient.js";
+
 const SPORTRADAR_API_KEY = String(import.meta.env.VITE_SPORTRADAR_API_KEY || "").trim();
 const SPORTRADAR_ACCESS_LEVEL = String(import.meta.env.VITE_SPORTRADAR_ACCESS_LEVEL || "trial").trim() || "trial";
 const SPORTRADAR_LANGUAGE = String(import.meta.env.VITE_SPORTRADAR_LANGUAGE || "en").trim() || "en";
 const DEFAULT_COMPETITION_ID = String(import.meta.env.VITE_FIBA_DEFAULT_COMPETITION_ID || "sr:competition:17788").trim();
 const DEFAULT_SEASON_ID = String(import.meta.env.VITE_FIBA_DEFAULT_SEASON_ID || "").trim();
 const API_BASE = `https://api.sportradar.com/basketball/${SPORTRADAR_ACCESS_LEVEL}/v2/${SPORTRADAR_LANGUAGE}`;
-const COMPETITIONS_URL = `${API_BASE}/competitions.json`;
+const COMPETITIONS_PATH = "/competitions.json";
 const REGULATION_PERIOD_SECONDS = 10 * 60;
 const OVERTIME_PERIOD_SECONDS = 5 * 60;
-const RUNTIME_API_KEY_STORAGE_KEY = "fiba.sportradarApiKey";
+const SPORTRADAR_PROXY_FUNCTION = "sportradar-proxy";
 const FLAG_CODE_BY_ABBREVIATION = {
   ANG: "ao",
   ARG: "ar",
@@ -98,43 +100,72 @@ const MENS_WORLD_CUP_2027_COMPETITION_PRIORITY = [
 ];
 const MENS_WORLD_CUP_2027_COMPETITION_IDS = new Set(MENS_WORLD_CUP_2027_COMPETITION_PRIORITY);
 
-function getRuntimeStorage() {
-  if (typeof window === "undefined" || !window.localStorage) return null;
-  return window.localStorage;
+function hasLocalApiKey() {
+  return Boolean(SPORTRADAR_API_KEY);
 }
 
-function getRuntimeApiKey() {
-  const storage = getRuntimeStorage();
-  if (!storage) return "";
-  return String(storage.getItem(RUNTIME_API_KEY_STORAGE_KEY) || "").trim();
+function hasSupabaseProxy() {
+  return Boolean(supabase);
 }
 
-function getConfiguredApiKey() {
-  return SPORTRADAR_API_KEY || getRuntimeApiKey();
-}
-
-function requireApiKey() {
-  if (!getConfiguredApiKey()) {
-    throw new Error("Sportradar API key is not configured. Set VITE_SPORTRADAR_API_KEY.");
+function requireDataSource() {
+  if (!hasLocalApiKey() && !hasSupabaseProxy()) {
+    throw new Error("Sportradar data source is not configured. Use VITE_SPORTRADAR_API_KEY for local development or configure the Supabase sportradar-proxy function for deployed environments.");
   }
 }
 
-async function requestJson(url) {
-  requireApiKey();
-  const apiKey = getConfiguredApiKey();
-  const response = await fetch(url, {
+function normalizeResourcePath(path) {
+  const value = normalizeText(path);
+  if (!value) return "";
+  return value.startsWith("/") ? value : `/${value}`;
+}
+
+async function requestDirectJson(resourcePath) {
+  const requestUrl = `${API_BASE}${resourcePath}`;
+  const response = await fetch(requestUrl, {
     headers: {
       accept: "application/json",
-      "x-api-key": apiKey,
+      "x-api-key": SPORTRADAR_API_KEY,
     },
   });
   if (!response.ok) {
     const error = new Error(`Request failed: ${response.status}`);
     error.status = response.status;
-    error.url = url;
+    error.url = requestUrl;
     throw error;
   }
   return response.json();
+}
+
+async function requestProxyJson(resourcePath) {
+  const { data, error } = await supabase.functions.invoke(SPORTRADAR_PROXY_FUNCTION, {
+    body: { path: resourcePath },
+  });
+  if (error) {
+    throw new Error(`Sportradar proxy is not configured. Deploy the Supabase ${SPORTRADAR_PROXY_FUNCTION} function and add its secrets.`);
+  }
+  if (data?.error) {
+    const proxyError = new Error(String(data.error));
+    proxyError.status = Number(data.status || 500);
+    proxyError.url = resourcePath;
+    throw proxyError;
+  }
+  return data;
+}
+
+async function requestJson(path) {
+  requireDataSource();
+  const resourcePath = normalizeResourcePath(path);
+  if (!resourcePath) {
+    throw new Error("Missing Sportradar resource path.");
+  }
+  if (hasLocalApiKey()) {
+    return requestDirectJson(resourcePath);
+  }
+  if (hasSupabaseProxy()) {
+    return requestProxyJson(resourcePath);
+  }
+  throw new Error("Sportradar data source is not configured.");
 }
 
 function safeNumber(value, fallback = 0) {
@@ -639,7 +670,7 @@ function buildBoxScoreTeam(teamSummary = {}, competitorStats = {}) {
 async function fetchCompetitionsRaw() {
   const cacheKey = "all";
   if (competitionsCache.has(cacheKey)) return competitionsCache.get(cacheKey);
-  const promise = requestJson(COMPETITIONS_URL)
+  const promise = requestJson(COMPETITIONS_PATH)
     .then((payload) => (Array.isArray(payload.competitions) ? payload.competitions.map(normalizeCompetition) : []));
   competitionsCache.set(cacheKey, promise);
   return promise;
@@ -676,7 +707,7 @@ export async function fetchSeasonOptions(competitionId = DEFAULT_COMPETITION_ID)
   const key = normalizeText(competitionId);
   if (!key) return [];
   if (seasonsCache.has(key)) return seasonsCache.get(key);
-  const promise = requestJson(`${API_BASE}/competitions/${encodeURIComponent(key)}/seasons.json`)
+  const promise = requestJson(`/competitions/${encodeURIComponent(key)}/seasons.json`)
     .then((payload) => (Array.isArray(payload.seasons) ? payload.seasons.map(normalizeSeason) : []))
     .then((seasons) => seasons.sort((left, right) => String(right.startDate).localeCompare(String(left.startDate))));
   seasonsCache.set(key, promise);
@@ -693,7 +724,7 @@ export async function fetchSeasonCompetitors(seasonId) {
   const key = normalizeText(seasonId);
   if (!key) return [];
   if (seasonCompetitorsCache.has(key)) return seasonCompetitorsCache.get(key);
-  const promise = requestJson(`${API_BASE}/seasons/${encodeURIComponent(key)}/competitors.json`)
+  const promise = requestJson(`/seasons/${encodeURIComponent(key)}/competitors.json`)
     .then((payload) => (Array.isArray(payload.season_competitors) ? payload.season_competitors : []))
     .then((competitors) => competitors.map((competitor) => {
       const entry = normalizeCompetitor(competitor);
@@ -712,7 +743,7 @@ async function fetchSeasonSummaries(seasonId) {
   const key = normalizeText(seasonId);
   if (!key) return [];
   if (seasonSummariesCache.has(key)) return seasonSummariesCache.get(key);
-  const promise = requestJson(`${API_BASE}/seasons/${encodeURIComponent(key)}/summaries.json`)
+  const promise = requestJson(`/seasons/${encodeURIComponent(key)}/summaries.json`)
     .then((payload) => (Array.isArray(payload.summaries) ? payload.summaries : []));
   seasonSummariesCache.set(key, promise);
   return promise;
@@ -722,7 +753,7 @@ async function fetchGameSummaryRaw(gameId) {
   const key = normalizeText(gameId);
   if (!key) throw new Error("Missing sport event id.");
   if (gameSummaryCache.has(key)) return gameSummaryCache.get(key);
-  const promise = requestJson(`${API_BASE}/sport_events/${encodeURIComponent(key)}/summary.json`);
+  const promise = requestJson(`/sport_events/${encodeURIComponent(key)}/summary.json`);
   gameSummaryCache.set(key, promise);
   return promise;
 }
@@ -731,7 +762,7 @@ async function fetchGameTimelineRaw(gameId) {
   const key = normalizeText(gameId);
   if (!key) throw new Error("Missing sport event id.");
   if (gameTimelineCache.has(key)) return gameTimelineCache.get(key);
-  const promise = requestJson(`${API_BASE}/sport_events/${encodeURIComponent(key)}/timeline.json`);
+  const promise = requestJson(`/sport_events/${encodeURIComponent(key)}/timeline.json`);
   gameTimelineCache.set(key, promise);
   return promise;
 }
@@ -887,22 +918,6 @@ export async function fetchCurrentGLeagueRosters() {
 
 export function nbaEventVideoUrl() {
   return null;
-}
-
-export function hasConfiguredApiKey() {
-  return Boolean(getConfiguredApiKey());
-}
-
-export function saveRuntimeApiKey(value) {
-  const apiKey = String(value || "").trim();
-  const storage = getRuntimeStorage();
-  if (!storage) return false;
-  if (!apiKey) {
-    storage.removeItem(RUNTIME_API_KEY_STORAGE_KEY);
-    return true;
-  }
-  storage.setItem(RUNTIME_API_KEY_STORAGE_KEY, apiKey);
-  return true;
 }
 
 export const FIBA_DEFAULT_COMPETITION_ID = DEFAULT_COMPETITION_ID;

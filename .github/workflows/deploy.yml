@@ -29,9 +29,6 @@ jobs:
         run: npm ci
       - name: Build
         env:
-          VITE_SPORTRADAR_API_KEY: ${{ secrets.VITE_SPORTRADAR_API_KEY }}
-          VITE_SPORTRADAR_ACCESS_LEVEL: ${{ secrets.VITE_SPORTRADAR_ACCESS_LEVEL }}
-          VITE_SPORTRADAR_LANGUAGE: ${{ secrets.VITE_SPORTRADAR_LANGUAGE }}
           VITE_FIBA_DEFAULT_COMPETITION_ID: ${{ secrets.VITE_FIBA_DEFAULT_COMPETITION_ID }}
           VITE_FIBA_DEFAULT_SEASON_ID: ${{ secrets.VITE_FIBA_DEFAULT_SEASON_ID }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
