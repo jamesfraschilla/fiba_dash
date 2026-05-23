@@ -1,7 +1,7 @@
 const SPORTRADAR_API_KEY = String(import.meta.env.VITE_SPORTRADAR_API_KEY || "").trim();
 const SPORTRADAR_ACCESS_LEVEL = String(import.meta.env.VITE_SPORTRADAR_ACCESS_LEVEL || "trial").trim() || "trial";
 const SPORTRADAR_LANGUAGE = String(import.meta.env.VITE_SPORTRADAR_LANGUAGE || "en").trim() || "en";
-const DEFAULT_COMPETITION_ID = String(import.meta.env.VITE_FIBA_DEFAULT_COMPETITION_ID || "sr:competition:17324").trim();
+const DEFAULT_COMPETITION_ID = String(import.meta.env.VITE_FIBA_DEFAULT_COMPETITION_ID || "sr:competition:17788").trim();
 const DEFAULT_SEASON_ID = String(import.meta.env.VITE_FIBA_DEFAULT_SEASON_ID || "").trim();
 const API_BASE = `https://api.sportradar.com/basketball/${SPORTRADAR_ACCESS_LEVEL}/v2/${SPORTRADAR_LANGUAGE}`;
 const COMPETITIONS_URL = `${API_BASE}/competitions.json`;
@@ -89,10 +89,10 @@ const gameSummaryCache = new Map();
 const gameTimelineCache = new Map();
 const teamRegistry = new Map();
 const MENS_WORLD_CUP_2027_COMPETITION_PRIORITY = [
+  "sr:competition:17788", // World Cup Qualification, Asia & Oceania
   "sr:competition:17324", // World Cup Qualification, Americas
   "sr:competition:16882", // World Cup Qualification, Europe
   "sr:competition:17304", // World Cup Qualification, Africa
-  "sr:competition:17788", // World Cup Qualification, Asia & Oceania
   "sr:competition:441",   // FIBA World Cup
 ];
 const MENS_WORLD_CUP_2027_COMPETITION_IDS = new Set(MENS_WORLD_CUP_2027_COMPETITION_PRIORITY);
