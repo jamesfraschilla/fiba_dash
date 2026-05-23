@@ -159,11 +159,11 @@ async function requestJson(path) {
   if (!resourcePath) {
     throw new Error("Missing Sportradar resource path.");
   }
-  if (hasLocalApiKey()) {
-    return requestDirectJson(resourcePath);
-  }
   if (hasSupabaseProxy()) {
     return requestProxyJson(resourcePath);
+  }
+  if (hasLocalApiKey()) {
+    return requestDirectJson(resourcePath);
   }
   throw new Error("Sportradar data source is not configured.");
 }

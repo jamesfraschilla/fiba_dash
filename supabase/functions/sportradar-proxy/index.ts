@@ -24,7 +24,14 @@ function isAllowedPath(path: string) {
   if (!path.startsWith("/")) return false;
   if (path.includes("..") || path.includes("://")) return false;
   if (!path.endsWith(".json")) return false;
-  return /^\/(competitions|seasons|sport_events)(\/|$)/.test(path);
+  return (
+    path === "/competitions.json"
+    || /^\/competitions\/[^/]+\/seasons\.json$/.test(path)
+    || /^\/seasons\/[^/]+\/competitors\.json$/.test(path)
+    || /^\/seasons\/[^/]+\/summaries\.json$/.test(path)
+    || /^\/sport_events\/[^/]+\/summary\.json$/.test(path)
+    || /^\/sport_events\/[^/]+\/timeline\.json$/.test(path)
+  );
 }
 
 Deno.serve(async (req) => {
